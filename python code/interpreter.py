@@ -12,6 +12,7 @@ import random
 from dash.exceptions import PreventUpdate
 import re
 
+#number of topics
 K = 25
 
 
@@ -129,25 +130,12 @@ def interpret():
         aggregate = []
         homogeneity = []
         length = len(au_ma[:, 0])
-        #low = int(round(0.3 * length))
-        #up = int(round(0.8 * length))
+
         for k in range(K):
-            #print("var", np.var(au_ma[:, k]))
             so = np.mean((au_ma[:, k]))
             aggregate.append(so)
             homogeneity.append(np.std(au_ma[:, k]))
 
-        #for i in range(len(au_ma[:, 0])):
-         #   h = sum(aggregate*np.log(aggregate/au_ma[i])+au_ma[i]*np.log(au_ma[i]/aggregate))
-
-          #  homogeneity += h
-        #print("AAA", aggregate)
-        #aggregate = sum(theta[cum[j]:cum[j + 1]])
-            #if div[0] < 5:
-
-            #    auth_embedding.append(np.full((1, K), 100)[0])
-            #else:
-        #x = aggregate / div
         div = np.full((1, K), sum(aggregate))[0]
         auth_embedding.append(np.array(aggregate)/div)
 
@@ -163,7 +151,6 @@ def interpret():
             rounded = round(max(s) * 1000) / 1000
             s_order.append((words_inv[s.index(max(s))][1]))
             s[s.index(max(s))] = -1000
-        #s_order = np.concatenate(s_order)
         topic_words.append(s_order)
 
     return meta, theta, beta, words_inv, lam, auth_embedding, topic_words, au_dir, hom
@@ -171,7 +158,6 @@ def interpret():
 meta, theta, beta, words_inv, lam, auth_embedding, topic_words, au_dir, hom = interpret()
 
 np.savetxt("auth_embed.txt", auth_embedding)
-#xxx = re.sub(r' +', ',', str(sum(theta)))
 
 
 def nx_to_plotly(G, node_cols):
@@ -241,14 +227,6 @@ def nx_to_plotly(G, node_cols):
     return fig
 
 
-#(xxx)
-#print(np.matrix(auth_embedding))
-#auth_embedding_trans = np.transpose(np.matrix(auth_embedding))
-#auth_embedding_trans_scaled = scale(auth_embedding_trans)
-#print(auth_embedding_trans_scaled)
-#graph(auth_embedding_trans_scaled, 97)
-
-
 def bucket(a,b):
 
     level = 0
@@ -312,12 +290,11 @@ def dist(a,b, min_filling, inv, bucket_size):
     hom_i = 0
     for o in b:  # Hellinger Distance for discrete probability distributions
         d = (1 / (2 ** 0.5)) * (sum(  ((distTo ** 0.5 - o ** 0.5) ** 2))) ** 0.5
-        #d = sum(distTo*np.log(distTo/o)+o*np.log(o/distTo))
+        #d = sum(distTo*np.log(distTo/o)+o*np.log(o/distTo)) #symmetric KL-Divergence
         # d = round(d*1000)/1000
         dist.append(d)
         hom_i += 1
     mi_old = -1
-    #lvl_list = np.zeros(len(meta)-1)
     lvl_list = []
     if inv == True:
         mima = np.max
@@ -364,7 +341,7 @@ def dist(a,b, min_filling, inv, bucket_size):
 
 
 ndcg_tot = 0
-total = [] # [32, 66, 1, 31, 143, 123, 10, 34, 193, 222]
+total = [] 
 for i in range(len(auth_embedding)):
     rand = np.floor(238*random.uniform(0,1))
     a, b, c = dist(int(rand), auth_embedding, 0, False, 'broad')
@@ -375,27 +352,6 @@ for i in range(len(auth_embedding)):
 ndcg_tot = ndcg_tot/len(auth_embedding)
 #print(ndcg_tot)
 #print(re.sub(r' +', ',', str(sum(total))))
-
-e = """
-r_nr = []
-for i in ['Beom Jun Kim','A. V. Tsiganov','Alex Townsend','Laurent Fargues','I. S. Timchenko','K. Nimmo','Michel Habib','Christophe De Wagter','Jennifer Cano','Amr S. Helmy']:
-    rand = i #np.floor(random.uniform(0, 1)*238)
-    r_nr.append(int(rand))
-    a, b, c = dist(int(rand), auth_embedding, 0, False, 'narrow')
-    print(rand, b[0:2])# , b[int(100+np.floor(random.uniform(0, 1)*100))])
-print(r_nr)
-
-recs = []
-for i in ['Beom Jun Kim','A. V. Tsiganov','Alex Townsend','Laurent Fargues','I. S. Timchenko','K. Nimmo','Michel Habib','Christophe De Wagter','Jennifer Cano','Amr S. Helmy']:
-    ind = [t[0] for t in meta].index(i)
-    print(ind)
-    a, b, c = dist(ind, auth_embedding, 0, False, 'narrow')
-    total.append(np.array(a))
-    ran = int(100+np.floor(100*random.uniform(0,1)))
-    ndcg_tot += c
-    recs.append((b[0][0], b[1][0], b[2][0], b[ran][0]))
-print(recs)
-"""
 
 def node_config(input, color):
     heat_map = []
@@ -412,7 +368,7 @@ def node_config(input, color):
             border_map.append(1)
         else:
             border_map.append(0)
-        #size_map.append((300*input[k]*2))
+
     return heat_map, border_map #, size_map
 
 
@@ -474,8 +430,6 @@ def au_recom(str_input):
 
         for a in auth_embedding:
             if not a[0] == 100:
-            #author_lk.append(np.dot((np.dot(np.diag(a), query_lkhood)), np.ones(K)))
-            # (1/(2**0.5))*(sum((query_lkhood**0.5-a**0.5)**2))**0.5
                 author_lk.append((1/(2**0.5))*( sum( (np.array(query_lkhood)**0.5-a**0.5)**2)**0.5 ) )
 
             else:
@@ -525,16 +479,6 @@ ret_store = G_drawn, [], html.H3('Recommendations for Query'), False
 topicSearch = False
 #post_activation = False
 post_activation_clicks = 0
-e = """
-o = 0.01
-for r in range(99):
-    for e in range(97):
-        dist(e, auth_embedding, o)
-    #print(round(1000*np.mean(last_dist))/1000, " Len.: ", len(last_dist))
-    print(round(1000*np.mean(all_lvl))/1000,",")
-    o += 0.01
-    all_lvl = []
-"""
 
 app = dash.Dash(__name__)
 app.title = 'Visual Topic Model'
@@ -708,8 +652,3 @@ def b(n_clicks, value):
 
 if __name__ == '__main__':
    app.run_server(debug=True)
-
-
-
-
-
